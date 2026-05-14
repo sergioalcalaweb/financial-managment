@@ -1,12 +1,13 @@
+import { cookies } from "next/headers";
 import { NextResponse } from "next/server";
 import { getLocale } from "@/lib/i18n";
 import { getDashboardMonthData } from "@/modules/dashboard/data";
 import { generateRecommendations } from "@/services/recommendations-engine";
 
-export function GET(request: Request) {
+export async function GET(request: Request) {
   const searchParams = new URL(request.url).searchParams;
-  const locale = getLocale(searchParams.get("lang") ?? undefined);
   const month = searchParams.get("month") ?? undefined;
+  const locale = getLocale((await cookies()).get("fmp_locale")?.value);
   const dashboard = getDashboardMonthData(month, locale);
 
   return NextResponse.json({

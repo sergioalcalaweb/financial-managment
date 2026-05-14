@@ -1,29 +1,32 @@
 "use client";
 
-import { usePathname, useRouter, useSearchParams } from "next/navigation";
+import { useRouter } from "next/navigation";
+import { useTransition } from "react";
 import type { Locale } from "@/lib/i18n";
-import { getLocale, getTranslations } from "@/lib/i18n";
+import { getTranslations } from "@/lib/i18n";
 import { Select } from "@/shared/components/ui/select";
 
 export function LanguageSelector({ locale }: { locale: Locale }) {
   const router = useRouter();
-  const pathname = usePathname();
-  const searchParams = useSearchParams();
-  const currentLocale = getLocale(searchParams.get("lang") ?? locale);
-  const t = getTranslations(currentLocale);
+  const [isPending, startTransition] = useTransition();
+  const t = getTranslations(locale);
 
   return (
     <Select
       aria-label={t.language}
-      value={currentLocale}
+      disabled={isPending}
+      value={locale}
       onChange={(event) => {
-        const params = new URLSearchParams(searchParams.toString());
-        const nextLocale = event.target.value;
+        const nextLocale = event.target.value as Locale;
 
-        params.set("lang", nextLocale);
-
-        const query = params.toString();
-        router.push(query ? `${pathname}?${query}` : pathname);
+        startTransition(async () => {
+          await fetch("/api/locale", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ locale: nextLocale })
+          });
+          router.refresh();
+        });
       }}
       className="w-28"
     >

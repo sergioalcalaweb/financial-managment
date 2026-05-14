@@ -1,3 +1,4 @@
+import { cookies } from "next/headers";
 import { Suspense } from "react";
 import { DashboardCharts } from "@/modules/dashboard/components/dashboard-charts";
 import { MonthSelector } from "@/modules/dashboard/components/month-selector";
@@ -11,10 +12,10 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/sha
 export default async function DashboardPage({
   searchParams
 }: {
-  searchParams: Promise<{ lang?: string; month?: string }>;
+  searchParams: Promise<{ month?: string }>;
 }) {
-  const { lang, month } = await searchParams;
-  const locale = getLocale(lang);
+  const { month } = await searchParams;
+  const locale = getLocale((await cookies()).get("fmp_locale")?.value);
   const t = getTranslations(locale);
   const dashboard = getDashboardMonthData(month, locale);
 

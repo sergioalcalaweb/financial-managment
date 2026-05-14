@@ -13,19 +13,12 @@ const protectedRoutes = [
 ];
 
 export async function proxy(request: NextRequest) {
-  const requestedLocale = request.nextUrl.searchParams.get("lang");
   const isProtected = protectedRoutes.some((route) =>
     request.nextUrl.pathname.startsWith(route)
   );
 
   if (!isProtected) {
-    const response = NextResponse.next();
-    if (requestedLocale === "en") {
-      response.cookies.set("fmp_locale", "en", { path: "/", sameSite: "lax" });
-    } else if (requestedLocale === "es") {
-      response.cookies.set("fmp_locale", "es", { path: "/", sameSite: "lax" });
-    }
-    return response;
+    return NextResponse.next();
   }
 
   const token = request.cookies.get("fmp_session")?.value;
@@ -41,13 +34,7 @@ export async function proxy(request: NextRequest) {
     if (request.nextUrl.pathname.startsWith("/admin") && payload.role !== "ADMIN") {
       return NextResponse.redirect(new URL("/dashboard", request.url));
     }
-    const response = NextResponse.next();
-    if (requestedLocale === "en") {
-      response.cookies.set("fmp_locale", "en", { path: "/", sameSite: "lax" });
-    } else if (requestedLocale === "es") {
-      response.cookies.set("fmp_locale", "es", { path: "/", sameSite: "lax" });
-    }
-    return response;
+    return NextResponse.next();
   } catch {
     return NextResponse.redirect(new URL("/login", request.url));
   }
