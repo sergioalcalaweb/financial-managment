@@ -1,0 +1,221 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum Role {
+  ADMIN
+  USER
+}
+
+enum Currency {
+  MXN
+  USD
+}
+
+enum ExpenseStatus {
+  PENDING
+  PAID
+  PARTIAL
+  OVERDUE
+}
+
+enum DebtStatus {
+  ACTIVE
+  PAID
+  PAUSED
+  DEFAULTED
+}
+
+enum CategoryScope {
+  INCOME
+  EXPENSE
+  INVESTMENT
+  DEBT
+}
+
+model User {
+  id                  String                    @id @default(cuid())
+  name                String
+  email               String                    @unique
+  passwordHash        String
+  role                Role                      @default(USER)
+  createdAt           DateTime                  @default(now())
+  updatedAt           DateTime                  @updatedAt
+  months              Month[]
+  incomes             Income[]
+  expenses            Expense[]
+  expenseTemplates    ExpenseTemplate[]
+  investmentAccounts  InvestmentAccount[]
+  debts               Debt[]
+  recommendations     Recommendation[]
+}
+
+model Month {
+  id              String          @id @default(cuid())
+  userId          String
+  label           String
+  year            Int
+  month           Int
+  startsAt        DateTime
+  endsAt          DateTime
+  createdAt       DateTime        @default(now())
+  user            User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+  incomes         Income[]
+  expenses        Expense[]
+  investmentReports MonthlyInvestmentReport[]
+  recommendations Recommendation[]
+
+  @@unique([userId, year, month])
+  @@index([userId, startsAt])
+}
+
+model Category {
+  id          String        @id @default(cuid())
+  name        String
+  scope       CategoryScope
+  parentId    String?
+  isGlobal    Boolean       @default(false)
+  createdAt   DateTime      @default(now())
+  parent      Category?     @relation("CategoryHierarchy", fields: [parentId], references: [id])
+  children    Category[]    @relation("CategoryHierarchy")
+
+  @@unique([name, scope, parentId])
+}
+
+model Income {
+  id          String    @id @default(cuid())
+  userId      String
+  monthId     String
+  name        String
+  category    String
+  currency    Currency
+  amount      Decimal   @db.Decimal(14, 2)
+  date        DateTime
+  recurring   Boolean   @default(false)
+  comments    String?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  month       Month     @relation(fields: [monthId], references: [id], onDelete: Cascade)
+
+  @@index([userId, monthId, currency])
+}
+
+model Expense {
+  id             String        @id @default(cuid())
+  userId         String
+  monthId        String
+  templateId     String?
+  name           String
+  category       String
+  subcategory    String?
+  currency       Currency
+  expectedAmount Decimal       @db.Decimal(14, 2)
+  actualAmount   Decimal       @db.Decimal(14, 2)
+  dueDate        DateTime
+  paymentDate    DateTime?
+  status         ExpenseStatus @default(PENDING)
+  recurring      Boolean       @default(false)
+  paymentMethod  String?
+  comments       String?
+  createdAt      DateTime      @default(now())
+  updatedAt      DateTime      @updatedAt
+  user           User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  month          Month         @relation(fields: [monthId], references: [id], onDelete: Cascade)
+  template       ExpenseTemplate? @relation(fields: [templateId], references: [id])
+
+  @@index([userId, monthId, currency, status])
+}
+
+model ExpenseTemplate {
+  id             String    @id @default(cuid())
+  userId         String
+  name           String
+  category       String
+  subcategory    String?
+  currency       Currency
+  expectedAmount Decimal   @db.Decimal(14, 2)
+  dueDay         Int
+  paymentMethod  String?
+  active         Boolean   @default(true)
+  comments       String?
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+  user           User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  expenses       Expense[]
+
+  @@index([userId, active, currency])
+}
+
+model InvestmentAccount {
+  id          String                    @id @default(cuid())
+  userId      String
+  name        String
+  institution String
+  currency    Currency
+  active      Boolean                   @default(true)
+  createdAt   DateTime                  @default(now())
+  updatedAt   DateTime                  @updatedAt
+  user        User                      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  reports     MonthlyInvestmentReport[]
+
+  @@index([userId, currency, active])
+}
+
+model MonthlyInvestmentReport {
+  id                      String            @id @default(cuid())
+  accountId               String
+  monthId                 String
+  initialInvestmentAmount Decimal           @db.Decimal(14, 2)
+  monthlyContribution     Decimal           @db.Decimal(14, 2)
+  monthlyWithdrawal       Decimal           @db.Decimal(14, 2)
+  finalInvestmentAmount   Decimal           @db.Decimal(14, 2)
+  monthlyInterestProfit   Decimal           @db.Decimal(14, 2)
+  accumulatedProfit       Decimal           @db.Decimal(14, 2)
+  performancePercentage   Decimal           @db.Decimal(8, 4)
+  comments                String?
+  createdAt               DateTime          @default(now())
+  updatedAt               DateTime          @updatedAt
+  account                 InvestmentAccount @relation(fields: [accountId], references: [id], onDelete: Cascade)
+  month                   Month             @relation(fields: [monthId], references: [id], onDelete: Cascade)
+
+  @@unique([accountId, monthId])
+}
+
+model Debt {
+  id             String     @id @default(cuid())
+  userId         String
+  name           String
+  type           String
+  currency       Currency
+  totalBalance   Decimal    @db.Decimal(14, 2)
+  monthlyPayment Decimal    @db.Decimal(14, 2)
+  interestRate   Decimal    @db.Decimal(8, 4)
+  dueDate        DateTime
+  status         DebtStatus @default(ACTIVE)
+  createdAt      DateTime   @default(now())
+  updatedAt      DateTime   @updatedAt
+  user           User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, currency, status])
+}
+
+model Recommendation {
+  id        String   @id @default(cuid())
+  userId    String
+  monthId   String
+  currency  Currency?
+  severity  String
+  title     String
+  message   String
+  createdAt DateTime @default(now())
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  month     Month    @relation(fields: [monthId], references: [id], onDelete: Cascade)
+
+  @@index([userId, monthId, severity])
+}
