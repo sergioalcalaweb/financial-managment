@@ -17,12 +17,9 @@ export function ExpenseForm() {
     resolver: zodResolver(expenseSchema),
     defaultValues: {
       name: "",
-      category: "subscriptions",
       currency: "MXN",
-      expectedAmount: 0,
-      actualAmount: 0,
-      dueDate: "2026-05-13",
-      status: "pending",
+      amount: 0,
+      expenseDate: "2026-05-13",
       recurring: false
     }
   });
@@ -37,10 +34,6 @@ export function ExpenseForm() {
         <Input {...form.register("name")} placeholder="Renta, AWS, pago de tarjeta" />
       </label>
       <label className="flex flex-col gap-2 text-sm font-medium">
-        Categoría
-        <Input {...form.register("category")} placeholder="Servicios" />
-      </label>
-      <label className="flex flex-col gap-2 text-sm font-medium">
         Moneda
         <Select {...form.register("currency")}>
           <option value="MXN">MXN</option>
@@ -48,29 +41,12 @@ export function ExpenseForm() {
         </Select>
       </label>
       <label className="flex flex-col gap-2 text-sm font-medium">
-        Estado
-        <Select {...form.register("status")}>
-          <option value="pending">Pendiente</option>
-          <option value="paid">Pagado</option>
-          <option value="partial">Parcial</option>
-          <option value="overdue">Vencido</option>
-        </Select>
+        Monto
+        <Input {...form.register("amount")} type="number" min="0" step="0.01" />
       </label>
       <label className="flex flex-col gap-2 text-sm font-medium">
-        Monto esperado
-        <Input {...form.register("expectedAmount")} type="number" min="0" step="0.01" />
-      </label>
-      <label className="flex flex-col gap-2 text-sm font-medium">
-        Monto real
-        <Input {...form.register("actualAmount")} type="number" min="0" step="0.01" />
-      </label>
-      <label className="flex flex-col gap-2 text-sm font-medium">
-        Fecha límite
-        <Input {...form.register("dueDate")} type="date" />
-      </label>
-      <label className="flex flex-col gap-2 text-sm font-medium">
-        Método de pago
-        <Input {...form.register("paymentMethod")} placeholder="Tarjeta, transferencia" />
+        Fecha de gasto
+        <Input {...form.register("expenseDate")} type="date" />
       </label>
       <label className="flex flex-col gap-2 text-sm font-medium md:col-span-2">
         Comentarios

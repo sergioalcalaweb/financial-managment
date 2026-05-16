@@ -46,15 +46,10 @@ export async function generateRecurringExpensesForMonth(year: number, month: num
       monthId: financialMonth.id,
       templateId: template.id,
       name: template.name,
-      category: template.category,
-      subcategory: template.subcategory,
       currency: template.currency,
-      expectedAmount: template.expectedAmount,
-      actualAmount: 0,
-      dueDate: new Date(Date.UTC(year, month - 1, template.dueDay)),
-      status: "PENDING",
+      amount: template.amount,
+      expenseDate: new Date(Date.UTC(year, month - 1, template.dueDay)),
       recurring: true,
-      paymentMethod: template.paymentMethod,
       comments: template.comments
     })),
     skipDuplicates: true
